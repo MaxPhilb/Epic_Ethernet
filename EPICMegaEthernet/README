@@ -1,0 +1,12 @@
+
+Telecharger la bibliotheque nanopb sur github
+mettre dans le dossier parent du dossier platformio
+
+ajouter au path de l'ordinateur (variables d'environnement) le dossier nanopb/generator
+
+Utilisation de nanopb pour protocol buffer avec Arduino
+Apres avoir cree son fichier .proto on va generer un .c et un .h
+
+dans le terminal (utiliser cmd ) taper:
+Se rendre dans le dossier du projet platformio ( cd ............)
+protoc --nanopb_out=./lib/autogen/ ./proto/epicethernet.proto --proto_path=./proto/

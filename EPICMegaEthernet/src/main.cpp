@@ -1,7 +1,17 @@
 #include <Arduino.h>
 #include "Wire.h"
+#include <Arduino_FreeRTOS.h>
+#include <event_groups.h>
+#include <SPI.h>
+#include <Ethernet.h>
 #include <Adafruit_MCP23X17.h>
 #include <Arduino_FreeRTOS.h>
+#include <pb_encode.h>
+#include <pb_decode.h>
+#include <pb_common.h>
+
+#include "epicethernet.pb.h"
+//#include "pio_without_options.pb.h"
 
 #define NB_INPUT 8
 #define NB_CHIP 24
@@ -42,6 +52,13 @@ byte tempLec[NB_LEC_DEBOUNCE][NB_CHIP];
 unsigned long startTime;
 
 bool reading=false;
+
+// L'adresse MAC du shield
+byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xA5, 0x7E };
+// L'adresse IP que prendra le shield
+IPAddress ip(192,168,2,123);
+
+EthernetServer serveur(4200);
 
 /**
  *
@@ -439,12 +456,26 @@ void setup()
   Serial.begin(115200);
   //Serial1.begin(115200);
     Wire.begin();
-   /*
-  Wire.begin(8);                    //declare le device en slave "I2C"
-  Wire.onReceive(receiveEvent);
-  Wire.onRequest(requestEvent);
-  */
-  //initialisation des I/O
+
+
+   char erreur = 0;
+  // On démarre le shield Ethernet SANS adresse IP (donc donnée via DHCP)
+  erreur = Ethernet.begin(mac);
+
+  if (erreur == 0) {
+    Serial.println("Parametrage avec ip fixe...");
+    // si une erreur a eu lieu cela signifie que l'attribution DHCP
+    // ne fonctionne pas. On initialise donc en forçant une IP
+    Ethernet.begin(mac, ip);
+  }
+  Serial.println("Init...");
+  // Donne une seconde au shield pour s'initialiser
+  delay(1000);
+  // On lance le serveur
+  serveur.begin();
+  Serial.print("Pret !");
+
+    //initialisation des I/O
   initchipselect();
   initInput();
   initMsg();
@@ -463,6 +494,38 @@ void setup()
  **/
 void loop()
 {
+  EthernetClient client = serveur.available();
+  if (client) {
+    // Quelqu'un est connecté !
+    Serial.print("On envoi !");
+    // On fait notre en-tête
+    // Tout d'abord le code de réponse 200 = réussite
+    client.println("HTTP/1.1 200 OK");
+    // Puis le type mime du contenu renvoyé, du json
+    client.println("Content-Type: application/json");
+    // Et c'est tout !
+    // On envoie une ligne vide pour signaler la fin du header
+    client.println();
+
+    // Puis on commence notre JSON par une accolade ouvrante
+    client.println("{");
+    // On envoie la première clé : "uptime"
+    client.print("\t\"uptime (ms)\": ");
+    // Puis la valeur de l'uptime
+    client.print(millis());
+    //Une petite virgule pour séparer les deux clés
+    client.println(",");
+    // Et on envoie la seconde nommée "analog 0"
+    client.print("\t\"analog 0\": ");
+    client.println(12);
+    // Et enfin on termine notre JSON par une accolade fermante
+    client.println("}");
+    // Donne le temps au client de prendre les données
+    delay(10);
+    // Ferme la connexion avec le client
+    client.stop();
+  }
+
 
   #ifdef DEBUG_EXECUTION_TIME
   startTime=millis();

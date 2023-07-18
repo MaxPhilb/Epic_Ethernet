@@ -10,7 +10,10 @@
 #include <pb_decode.h>
 #include <pb_common.h>
 
-#include "epicethernet.pb.h"
+#include "pb_arduino.h"
+
+#include "epicethernetinput.pb.h"
+#include "epicethernetoutput.pb.h"
 //#include "pio_without_options.pb.h"
 
 #define NB_INPUT 8
@@ -59,6 +62,50 @@ byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xA5, 0x7E };
 IPAddress ip(192,168,2,123);
 
 EthernetServer serveur(4200);
+//EthernetClient client();
+
+
+void EncodeMessage(EthernetClient client)
+{
+    int32_t buffer[40];
+    size_t message_length;
+
+
+    pb_istream_s pb_in =as_pb_istream(client);
+    pb_ostream_s pb_out =as_pb_ostream(client);
+
+    EpicEthernetOutput frameReceived= EpicEthernetOutput_init_zero;
+   
+
+    //reception message pour piloter les sorties
+    pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
+
+    //emission message pour envoyer l'etat des entrees
+    //pb_encode(&pb_out, &EpicEthernetInput, &original);
+
+  /*
+    TestMessageWithoutOptions original = TestMessageWithoutOptions_init_zero;
+    original.number = 45;
+
+    ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+    TEST(pb_encode(&ostream, &TestMessageWithoutOptions_msg, &original));
+
+    written = ostream.bytes_written;
+
+    istream = pb_istream_from_buffer(buffer, written);
+
+    TestMessageWithoutOptions decoded = TestMessageWithoutOptions_init_zero;
+
+    TEST(pb_decode(&istream, &TestMessageWithoutOptions_msg, &decoded));
+
+    TEST(decoded.number == 45);
+*/
+}
+
+
+
+
 
 /**
  *
@@ -498,6 +545,7 @@ void loop()
   if (client) {
     // Quelqu'un est connecté !
     Serial.print("On envoi !");
+    EncodeMessage(client);
     // On fait notre en-tête
     // Tout d'abord le code de réponse 200 = réussite
     client.println("HTTP/1.1 200 OK");

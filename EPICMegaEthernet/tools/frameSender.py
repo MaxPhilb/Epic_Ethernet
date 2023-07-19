@@ -1,4 +1,5 @@
 import sys
+import socket
 
 sys.path.append('./protopy')    
 
@@ -6,17 +7,21 @@ import epicethernetoutput_pb2
 
 
 
-listout=[];
+listout=epicethernetoutput_pb2.EpicEthernetOutput();
 boolstate=False;
 
 for i in range(16):
-    frameforoutput= epicethernetoutput_pb2.DigitalOutput()
-    frameforoutput.id=i
-    frameforoutput.value=boolstate
+    output=listout.digoutputs.add()
+    output.id=i
+    output.value=boolstate
     boolstate=not boolstate
-    listout.append(frameforoutput)
+    
 
 
 print(listout)
 
-SerializeToString
+sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+sock.connect(("192.168.2.160",4200))
+message=listout.SerializeToString()+"\n".encode('ascii')
+sock.send(message)
+sock.close()

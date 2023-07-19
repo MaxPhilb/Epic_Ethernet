@@ -7,7 +7,7 @@ message DigitalOutput{
 
 message EpicEthernetOutput {
 
-    repeated DigitalOutput digoutputs=1; //32 sorties
+    repeated DigitalOutput digoutputs=1; [(nanopb).fixed.length= true ,(nanopb)max_size= = 32] //32 sorties
     
 }
 

@@ -1,11 +1,9 @@
 #include <Arduino.h>
 #include "Wire.h"
-#include <Arduino_FreeRTOS.h>
-#include <event_groups.h>
 #include <SPI.h>
-#include <Ethernet.h>
 #include <Adafruit_MCP23X17.h>
-#include <Arduino_FreeRTOS.h>
+#include "defines.h"
+
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include <pb_common.h>
@@ -56,51 +54,85 @@ unsigned long startTime;
 
 bool reading=false;
 
-// L'adresse MAC du shield
-byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xA5, 0x7E };
-// L'adresse IP que prendra le shield
-IPAddress ip(192,168,2,123);
 
 EthernetServer serveur(4200);
 //EthernetClient client();
 
 
-void EncodeMessage(EthernetClient client)
+uint8_t *readbuf = (uint8_t *)malloc(100);
+int indexreadbuf = 0;
+
+void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg){
+
+  Serial.println("call decodelistoutput");
+   DigitalOutput digout = DigitalOutput_init_zero;
+   if (pb_decode(stream,DigitalOutput_fields,&digout)){
+      Serial.print("error decoding: ");
+      Serial.println(stream->errmsg);
+   }
+   else{
+      Serial.println("decodelist ok");
+   }
+   Serial.print("id ");
+   Serial.print(digout.id);
+   Serial.print(" value ");
+   Serial.println(digout.value);
+  digitalWrite(digout.id,digout.value);
+
+}
+
+void decodeMessage2()
+{
+   
+    pb_istream_s pb_in = pb_istream_from_buffer(*readbuf,indexreadbuf);
+    //pb_ostream_s pb_out =as_pb_ostream(client);
+    Serial.print("state ");
+    Serial.println(pb_in.errmsg);
+
+
+   
+    EpicEthernetOutput frameReceived= EpicEthernetOutput_init_zero;
+   
+
+    //reception message pour piloter les sorties
+     bool status = pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
+    if(status != true)
+    {
+      Serial.print("error decoding: ");
+      Serial.println(pb_in.errmsg);
+      
+    }else{
+      Serial.println("decode ok ");
+    
+    }
+    frameReceived.digoutputs.funcs.decode=&decodeListOutput;
+}
+
+void decodeMessage(EthernetClient client)
 {
     int32_t buffer[40];
     size_t message_length;
 
 
+
     pb_istream_s pb_in =as_pb_istream(client);
-    pb_ostream_s pb_out =as_pb_ostream(client);
+    //pb_ostream_s pb_out =as_pb_ostream(client);
 
     EpicEthernetOutput frameReceived= EpicEthernetOutput_init_zero;
    
 
     //reception message pour piloter les sorties
-    pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
+     bool status = pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
+    if(status != true)
+    {
+      Serial.print("error decoding: ");
+      Serial.println(pb_in.errmsg);
+      
+    }
+    frameReceived.digoutputs.funcs.decode=&decodeListOutput;
+    
 
-    //emission message pour envoyer l'etat des entrees
-    //pb_encode(&pb_out, &EpicEthernetInput, &original);
-
-  /*
-    TestMessageWithoutOptions original = TestMessageWithoutOptions_init_zero;
-    original.number = 45;
-
-    ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-    TEST(pb_encode(&ostream, &TestMessageWithoutOptions_msg, &original));
-
-    written = ostream.bytes_written;
-
-    istream = pb_istream_from_buffer(buffer, written);
-
-    TestMessageWithoutOptions decoded = TestMessageWithoutOptions_init_zero;
-
-    TEST(pb_decode(&istream, &TestMessageWithoutOptions_msg, &decoded));
-
-    TEST(decoded.number == 45);
-*/
+  
 }
 
 
@@ -504,21 +536,48 @@ void setup()
   //Serial1.begin(115200);
     Wire.begin();
 
+  pinMode(18,OUTPUT);
+  digitalWrite(18, LOW);
+  delay(1);
+  digitalWrite(18, HIGH);
+  pinMode(USE_THIS_SS_PIN, OUTPUT);
+  digitalWrite(USE_THIS_SS_PIN, HIGH);
 
-   char erreur = 0;
-  // On démarre le shield Ethernet SANS adresse IP (donc donnée via DHCP)
-  erreur = Ethernet.begin(mac);
+  Serial.println("Demarrage");
 
-  if (erreur == 0) {
-    Serial.println("Parametrage avec ip fixe...");
-    // si une erreur a eu lieu cela signifie que l'attribution DHCP
-    // ne fonctionne pas. On initialise donc en forçant une IP
-    Ethernet.begin(mac, ip);
+  SerialDebug.print("\nStarting WebServer on ");
+  SerialDebug.print(BOARD_NAME);
+  SerialDebug.print(F(" with "));
+  SerialDebug.println(SHIELD_TYPE);
+  SerialDebug.println(ETHERNET_GENERIC_VERSION);
+
+  Ethernet.init (USE_THIS_SS_PIN);
+
+  delay(1);
+  Ethernet.begin(mac[0]);
+  
+  
+  SerialDebug.print(F("Connected! IP address: "));
+  SerialDebug.println(Ethernet.localIP());
+
+  if ( (Ethernet.getChip() == w5500) || (Ethernet.getChip() == w6100) || (Ethernet.getAltChip() == w5100s) )
+  {
+    if (Ethernet.getChip() == w6100)
+      SerialDebug.print(F("W6100 => "));
+    else if (Ethernet.getChip() == w5500)
+      SerialDebug.print(F("W6100 => "));
+    else
+      SerialDebug.print(F("W5100S => "));
+    
+    SerialDebug.print(F("Speed: "));
+    SerialDebug.print(Ethernet.speedReport());
+    SerialDebug.print(F(", Duplex: "));
+    SerialDebug.print(Ethernet.duplexReport());
+    SerialDebug.print(F(", Link status: "));
+    SerialDebug.println(Ethernet.linkReport());
   }
-  Serial.println("Init...");
-  // Donne une seconde au shield pour s'initialiser
-  delay(1000);
-  // On lance le serveur
+
+  // start the web server on port 80
   serveur.begin();
   Serial.print("Pret !");
 
@@ -526,6 +585,7 @@ void setup()
   initchipselect();
   initInput();
   initMsg();
+  
 }
 
 
@@ -539,13 +599,45 @@ void setup()
  *      lecture en continue des I/O
  * 
  **/
+
 void loop()
 {
+  
   EthernetClient client = serveur.available();
   if (client) {
     // Quelqu'un est connecté !
     Serial.print("On envoi !");
-    EncodeMessage(client);
+    
+    while(client.connected()){
+        if(client.available())
+        {
+          uint8_t carlu = client.read(); //on lit ce qu'il raconte
+          readbuf[indexreadbuf] = carlu;
+          indexreadbuf++;
+          /*
+          if(carlu != '\n') { // On est en fin de chaîne ?
+            // non ! alors on stocke le caractère
+            readbuf[indexreadbuf] = carlu;
+            
+          } else {
+            // on a fini de lire ce qui nous intéresse
+            // on marque la fin de l'url (caractère de fin de chaîne)
+            
+            //readbuf[indexreadbuf] = '\0';
+            //readbuf[indexreadbuf] = '';
+            // + TRAITEMENT
+            // on quitte le while
+            break;
+          }*/
+        }
+    }
+  Serial.print("message recu ");
+  Serial.println(indexreadbuf);
+  //Serial.println(*readbuf);
+    decodeMessage2();
+    
+    //decodeMessage(client);
+    /*
     // On fait notre en-tête
     // Tout d'abord le code de réponse 200 = réussite
     client.println("HTTP/1.1 200 OK");
@@ -571,6 +663,7 @@ void loop()
     // Donne le temps au client de prendre les données
     delay(10);
     // Ferme la connexion avec le client
+    */
     client.stop();
   }
 
@@ -593,4 +686,5 @@ void loop()
   Serial.println(deltaTime);
     //delay(1000);
   #endif
+  
 }

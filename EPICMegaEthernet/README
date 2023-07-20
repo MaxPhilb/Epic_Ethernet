@@ -9,4 +9,4 @@ Apres avoir cree son fichier .proto on va generer un .c et un .h
 
 dans le terminal (utiliser cmd ) taper:
 Se rendre dans le dossier du projet platformio ( cd ............)
-protoc --nanopb_out=./lib/autogen/ ./proto/epicethernet.proto --proto_path=./proto/
+protoc --nanopb_out=./lib/autogen/ ./proto/epicethernetoutput.proto --proto_path=./proto/

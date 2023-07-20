@@ -11,12 +11,13 @@
 
 /* Struct definitions */
 typedef struct _DigitalOutput {
-    int32_t id;
+    int32_t numChannel;
     bool value;
 } DigitalOutput;
 
 typedef struct _EpicEthernetOutput {
-    pb_callback_t digoutputs; /* 32 sorties */
+    pb_callback_t digoutputs; /* 32 sorties [(nanopb).max_size = 32 , (nanopb).fixed_length = true] */
+    int32_t nbChannel;
 } EpicEthernetOutput;
 
 
@@ -26,24 +27,26 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define DigitalOutput_init_default               {0, 0}
-#define EpicEthernetOutput_init_default          {{{NULL}, NULL}}
+#define EpicEthernetOutput_init_default          {{{NULL}, NULL}, 0}
 #define DigitalOutput_init_zero                  {0, 0}
-#define EpicEthernetOutput_init_zero             {{{NULL}, NULL}}
+#define EpicEthernetOutput_init_zero             {{{NULL}, NULL}, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define DigitalOutput_id_tag                     1
+#define DigitalOutput_numChannel_tag             1
 #define DigitalOutput_value_tag                  2
 #define EpicEthernetOutput_digoutputs_tag        1
+#define EpicEthernetOutput_nbChannel_tag         2
 
 /* Struct field encoding specification for nanopb */
 #define DigitalOutput_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT32,    id,                1) \
+X(a, STATIC,   SINGULAR, INT32,    numChannel,        1) \
 X(a, STATIC,   SINGULAR, BOOL,     value,             2)
 #define DigitalOutput_CALLBACK NULL
 #define DigitalOutput_DEFAULT NULL
 
 #define EpicEthernetOutput_FIELDLIST(X, a) \
-X(a, CALLBACK, REPEATED, MESSAGE,  digoutputs,        1)
+X(a, CALLBACK, REPEATED, MESSAGE,  digoutputs,        1) \
+X(a, STATIC,   SINGULAR, INT32,    nbChannel,         2)
 #define EpicEthernetOutput_CALLBACK pb_default_field_callback
 #define EpicEthernetOutput_DEFAULT NULL
 #define EpicEthernetOutput_digoutputs_MSGTYPE DigitalOutput

@@ -66,73 +66,20 @@ void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg)
 
   Serial.println("call decodelistoutput");
    DigitalOutput digout = DigitalOutput_init_zero;
-   if (pb_decode(stream,DigitalOutput_fields,&digout)){
+   if (!pb_decode(stream,DigitalOutput_fields,&digout)){
       Serial.print("error decoding: ");
       Serial.println(stream->errmsg);
    }
    else{
       Serial.println("decodelist ok");
    }
-   Serial.print("id ");
-   Serial.print(digout.id);
+   Serial.print("numChannel ");
+   Serial.print(digout.numChannel);
    Serial.print(" value ");
    Serial.println(digout.value);
-  digitalWrite(digout.id,digout.value);
-
-}
-
-void decodeMessage2()
-{
    
-    pb_istream_s pb_in = pb_istream_from_buffer(*readbuf,indexreadbuf);
-    //pb_ostream_s pb_out =as_pb_ostream(client);
-    Serial.print("state ");
-    Serial.println(pb_in.errmsg);
+  setOutput(digout.numChannel,digout.value);
 
-
-   
-    EpicEthernetOutput frameReceived= EpicEthernetOutput_init_zero;
-   
-
-    //reception message pour piloter les sorties
-     bool status = pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
-    if(status != true)
-    {
-      Serial.print("error decoding: ");
-      Serial.println(pb_in.errmsg);
-      
-    }else{
-      Serial.println("decode ok ");
-    
-    }
-    frameReceived.digoutputs.funcs.decode=&decodeListOutput;
-}
-
-void decodeMessage(EthernetClient client)
-{
-    int32_t buffer[40];
-    size_t message_length;
-
-
-
-    pb_istream_s pb_in =as_pb_istream(client);
-    //pb_ostream_s pb_out =as_pb_ostream(client);
-
-    EpicEthernetOutput frameReceived= EpicEthernetOutput_init_zero;
-   
-
-    //reception message pour piloter les sorties
-     bool status = pb_decode(&pb_in, EpicEthernetOutput_fields, &frameReceived);
-    if(status != true)
-    {
-      Serial.print("error decoding: ");
-      Serial.println(pb_in.errmsg);
-      
-    }
-    frameReceived.digoutputs.funcs.decode=&decodeListOutput;
-    
-
-  
 }
 
 
@@ -540,10 +487,13 @@ void setup()
   digitalWrite(18, LOW);
   delay(1);
   digitalWrite(18, HIGH);
+
   pinMode(USE_THIS_SS_PIN, OUTPUT);
   digitalWrite(USE_THIS_SS_PIN, HIGH);
 
   Serial.println("Demarrage");
+
+  initDigOutput();
 
   SerialDebug.print("\nStarting WebServer on ");
   SerialDebug.print(BOARD_NAME);
@@ -602,79 +552,67 @@ void setup()
 
 void loop()
 {
-  
+  uint8_t buffer[256]; // Ajustez la taille du tampon en fonction de la taille maximale du message protobuf
+  int bytesRead;
   EthernetClient client = serveur.available();
+  //client.setTimeout(10);
   if (client) {
     // Quelqu'un est connecté !
-    Serial.print("On envoi !");
+    //Serial.print("On envoi !");
+    bytesRead=0;
     
     while(client.connected()){
-        if(client.available())
-        {
-          uint8_t carlu = client.read(); //on lit ce qu'il raconte
-          readbuf[indexreadbuf] = carlu;
-          indexreadbuf++;
-          /*
-          if(carlu != '\n') { // On est en fin de chaîne ?
-            // non ! alors on stocke le caractère
-            readbuf[indexreadbuf] = carlu;
+        int sizeR=client.available();
+        if(sizeR)
+        { 
+            bytesRead = client.read(buffer, sizeof(buffer));
+            if(bytesRead>0)
+            {
+              // Désérialiser le message protobuf à partir du tampon
+              pb_istream_t istream = pb_istream_from_buffer(buffer, bytesRead);
+              EpicEthernetOutput epicEthernetOutput = EpicEthernetOutput_init_default; // Structure du message EpicEthernetOutput
+              epicEthernetOutput.digoutputs.funcs.decode=decodeListOutput;
+              // Utilisez pb_decode_delimited pour désérialiser un message avec un délimiteur (comme TCP)
+              bool success = pb_decode(&istream, EpicEthernetOutput_fields, &epicEthernetOutput);
+
+              if (success) {
+                // Traitez le message protobuf reçu ici
+                Serial.print("success ");
+                Serial.println(epicEthernetOutput.nbChannel);
+
+              }else{
+                Serial.print("error ");
+                Serial.println(istream.errmsg);
+              }
+            }
             
-          } else {
-            // on a fini de lire ce qui nous intéresse
-            // on marque la fin de l'url (caractère de fin de chaîne)
-            
-            //readbuf[indexreadbuf] = '\0';
-            //readbuf[indexreadbuf] = '';
-            // + TRAITEMENT
-            // on quitte le while
-            break;
-          }*/
+        }else{
+          
+          Serial.println("do something else");
+          delay(3000);
+
+
+
         }
     }
-  Serial.print("message recu ");
-  Serial.println(indexreadbuf);
+  //Serial.print("message recu ");
+ // Serial.println(bytesRead);
   //Serial.println(*readbuf);
-    decodeMessage2();
+  //  decodeMessage2();
     
-    //decodeMessage(client);
-    /*
-    // On fait notre en-tête
-    // Tout d'abord le code de réponse 200 = réussite
-    client.println("HTTP/1.1 200 OK");
-    // Puis le type mime du contenu renvoyé, du json
-    client.println("Content-Type: application/json");
-    // Et c'est tout !
-    // On envoie une ligne vide pour signaler la fin du header
-    client.println();
-
-    // Puis on commence notre JSON par une accolade ouvrante
-    client.println("{");
-    // On envoie la première clé : "uptime"
-    client.print("\t\"uptime (ms)\": ");
-    // Puis la valeur de l'uptime
-    client.print(millis());
-    //Une petite virgule pour séparer les deux clés
-    client.println(",");
-    // Et on envoie la seconde nommée "analog 0"
-    client.print("\t\"analog 0\": ");
-    client.println(12);
-    // Et enfin on termine notre JSON par une accolade fermante
-    client.println("}");
-    // Donne le temps au client de prendre les données
-    delay(10);
-    // Ferme la connexion avec le client
-    */
-    client.stop();
+  
+   
   }
 
+  //Serial.println("no more client");
 
   #ifdef DEBUG_EXECUTION_TIME
   startTime=millis();
   #endif
 
-   analogReadInput();
+   //analogReadInput();
   //digitalReadInput(message.digInput);
-  readDebounceInput();
+  //readDebounceInput();
 
 
    #ifdef DEBUG

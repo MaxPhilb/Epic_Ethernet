@@ -56,12 +56,35 @@ bool reading=false;
 
 
 EthernetServer serveur(4200);
-//EthernetClient client();
 
 
-uint8_t *readbuf = (uint8_t *)malloc(100);
-int indexreadbuf = 0;
 
+
+/**
+ * 
+ * 
+ *    lecture des entrees et envoie du message en protobuf
+ * 
+ * 
+ * 
+*/
+
+void readAndSendInput(){
+
+  
+}
+
+
+
+/**
+ * 
+ * 
+ *    fonction callback pour decoder le message protobuf
+ * 
+ * 
+ * 
+ * 
+*/
 void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg){
 
   Serial.println("call decodelistoutput");
@@ -166,7 +189,7 @@ void initDigOutput()
 /**
  *
  *          analogReadInput
- *
+ *    lecture des analogiques
  *
  **/
 
@@ -233,7 +256,7 @@ void resetchipselect()
 /*
 *
 *
-*   Lecture du port L en entier
+*   Lecture du port L en entier pour lire 8 bit de données en un seul coup
 *
 */
 byte readPort()
@@ -561,6 +584,11 @@ void loop()
     //Serial.print("On envoi !");
     bytesRead=0;
     
+    /*
+    
+        Quand on recoit un message
+
+    */
     while(client.connected()){
         int sizeR=client.available();
         if(sizeR)
@@ -572,7 +600,7 @@ void loop()
               pb_istream_t istream = pb_istream_from_buffer(buffer, bytesRead);
               EpicEthernetOutput epicEthernetOutput = EpicEthernetOutput_init_default; // Structure du message EpicEthernetOutput
               epicEthernetOutput.digoutputs.funcs.decode=decodeListOutput;
-              // Utilisez pb_decode_delimited pour désérialiser un message avec un délimiteur (comme TCP)
+              // Utilisez pb_decode pour désérialiser un message 
               bool success = pb_decode(&istream, EpicEthernetOutput_fields, &epicEthernetOutput);
 
               if (success) {

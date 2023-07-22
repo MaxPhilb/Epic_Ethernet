@@ -12,9 +12,11 @@ message AnalogInput{
 
 message EpicEthernetInput {
 
-    repeated DigitalInput diginputs=1; //192 entrees
-    repeated AnalogInput  anainputs=2; //16 entrees
-    required String DeviceName=3; //
-    required String MacAddress=4; // 
+    repeated DigitalInput diginputs=1;
+     int32 numberDigitalInput=2;  //192 entrees
+    repeated AnalogInput  anainputs=3; 
+     int32 numberAnalogInput=4; //16 entrees
+     string DeviceName=5; //
+     string MacAddress=6; // 
 }
 

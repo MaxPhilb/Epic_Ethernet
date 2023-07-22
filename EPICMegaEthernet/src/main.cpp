@@ -20,6 +20,8 @@
 #define nbAnaInput 16
 
 
+#define MAC_INDEX 0
+
 //#define DEBUG   //permet d'afficher les traces
 //#define DEBUG_EXECUTION_TIME //permet d'afficher les temps d'execution
 
@@ -58,7 +60,33 @@ bool reading=false;
 EthernetServer serveur(4200);
 
 
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+*/
 
+
+bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+{
+     for(int i=0;i<nbAnaInput;i++){
+          
+    
+    }
+}
+
+
+bool encode_string(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+{
+    const char* str = (const char*)(*arg);
+
+    if (!pb_encode_tag_for_field(stream, field))
+        return false;
+
+    return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+}
 
 /**
  * 
@@ -71,7 +99,48 @@ EthernetServer serveur(4200);
 
 void readAndSendInput(){
 
+ 
+
+  uint8_t buffer[128];
+  size_t message_length;
+ bool status;
+  //send
+  EpicEthernetInput epicIn = EpicEthernetInput_init_zero;
+  DigitalInput digIn=DigitalInput_init_zero;
+  AnalogInput anaIn=AnalogInput_init_zero;
+
+  pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+        
+        
+        epicIn.numberAnalogInput=16;
+        epicIn.numberDigitalInput=192;
+        epicIn.DeviceName.arg = "EPIC";
+        epicIn.DeviceName.funcs.encode = &encode_string;
+
+        epicIn.MacAddress.arg = mac[MAC_INDEX];
+        epicIn.MacAddress.funcs.encode = &encode_string;
+       
+         //read
+        analogReadInput();
+        epicIn.anainputs.arg=&message.anaInput;
+        epicIn.anainputs.funcs.encode= &encode_anaInput;
+        
+        /* Now we are ready to encode the message! */
+        status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
+        message_length = stream.bytes_written;
+        
+        /* Then just check for any errors.. */
+        if (!status)
+        {
+            printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+            return 1;
+        }
+
   
+  epicIn.anainputs=anaIn;
+  epicIn.diginputs=digIn;
+
+
 }
 
 
@@ -527,7 +596,7 @@ void setup()
   Ethernet.init (USE_THIS_SS_PIN);
 
   delay(1);
-  Ethernet.begin(mac[0]);
+  Ethernet.begin(mac[MAC_INDEX]);
   
   
   SerialDebug.print(F("Connected! IP address: "));

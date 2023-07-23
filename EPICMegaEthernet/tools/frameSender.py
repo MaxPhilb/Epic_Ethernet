@@ -5,12 +5,15 @@ import socket
 sys.path.append('./protopy')    
 
 import epicethernetoutput_pb2
-
+import epicethernetinput_pb2
 
 
 listout=epicethernetoutput_pb2.EpicEthernetOutput()
 listout.nbChannel=32
 boolstate=True
+
+epicIn=epicethernetinput_pb2.EpicEthernetInput()
+
 
 for i in range(5):
     output=listout.digoutputs.add()
@@ -40,5 +43,18 @@ for i in range(5):
 message=listout.SerializeToString()
 #+"\n".encode('ascii')
 sock.send(message)
+while True:
+    data = sock.recv(1024)
+    if not data:
+        break
+    #print (data)
+    try:
+        epicIn.ParseFromString(data)
+        print (epicIn.DeviceName)
+        print (epicIn.MacAddress)
+    except Exception e:
+        print (e)
+
+            
 
 sock.close()

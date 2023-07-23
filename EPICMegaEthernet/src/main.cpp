@@ -71,10 +71,21 @@ EthernetServer serveur(4200);
 
 bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
 {
+    AnalogInput anaIn=AnalogInput_init_zero;
      for(int i=0;i<nbAnaInput;i++){
-          
-    
+          anaIn=AnalogInput_init_zero;
+          int val=analogRead(anaPin[i]);
+          anaIn.id=i;
+          anaIn.value=val;
+
+          if( pb_encode(stream,AnalogInput_fields,&anaIn) == false)
+          {
+            Serial.println("encode failed");
+            return false;
+          }    
     }
+
+    return true;
 }
 
 
@@ -97,17 +108,17 @@ bool encode_string(pb_ostream_t* stream, const pb_field_t* field, void* const* a
  * 
 */
 
-void readAndSendInput(){
+void readAndSendInput(EthernetClient client){
 
  
 
-  uint8_t buffer[128];
+  uint8_t buffer[1024];
   size_t message_length;
  bool status;
   //send
   EpicEthernetInput epicIn = EpicEthernetInput_init_zero;
   DigitalInput digIn=DigitalInput_init_zero;
-  AnalogInput anaIn=AnalogInput_init_zero;
+
 
   pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
         
@@ -120,9 +131,8 @@ void readAndSendInput(){
         epicIn.MacAddress.arg = mac[MAC_INDEX];
         epicIn.MacAddress.funcs.encode = &encode_string;
        
-         //read
-        analogReadInput();
-        epicIn.anainputs.arg=&message.anaInput;
+
+        //epicIn.anainputs.arg=&message.anaInput;
         epicIn.anainputs.funcs.encode= &encode_anaInput;
         
         /* Now we are ready to encode the message! */
@@ -132,45 +142,19 @@ void readAndSendInput(){
         /* Then just check for any errors.. */
         if (!status)
         {
-            printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
-            return 1;
+            Serial.print("Encoding failed:");
+            Serial.println(PB_GET_ERROR(&stream));
+            
+        }
+        if(client){
+          client.write(buffer,message_length);
         }
 
+
+
   
-  epicIn.anainputs=anaIn;
-  epicIn.diginputs=digIn;
 
 
-}
-
-
-
-/**
- * 
- * 
- *    fonction callback pour decoder le message protobuf
- * 
- * 
- * 
- * 
-*/
-void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg){
-
-  Serial.println("call decodelistoutput");
-   DigitalOutput digout = DigitalOutput_init_zero;
-   if (!pb_decode(stream,DigitalOutput_fields,&digout)){
-      Serial.print("error decoding: ");
-      Serial.println(stream->errmsg);
-   }
-   else{
-      Serial.println("decodelist ok");
-   }
-   Serial.print("numChannel ");
-   Serial.print(digout.numChannel);
-   Serial.print(" value ");
-   Serial.println(digout.value);
-   
-  setOutput(digout.numChannel,digout.value);
 
 }
 
@@ -213,6 +197,40 @@ void setOutput(int channel, bool state)
   }
  
 }
+
+
+
+/**
+ * 
+ * 
+ *    fonction callback pour decoder le message protobuf
+ * 
+ * 
+ * 
+ * 
+*/
+void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg){
+
+  Serial.println("call decodelistoutput");
+   DigitalOutput digout = DigitalOutput_init_zero;
+   if (!pb_decode(stream,DigitalOutput_fields,&digout)){
+      Serial.print("error decoding: ");
+      Serial.println(stream->errmsg);
+   }
+   else{
+      Serial.println("decodelist ok");
+   }
+   Serial.print("numChannel ");
+   Serial.print(digout.numChannel);
+   Serial.print(" value ");
+   Serial.println(digout.value);
+   
+  setOutput(digout.numChannel,digout.value);
+
+}
+
+
+
 
 
 /**
@@ -685,8 +703,9 @@ void loop()
             
         }else{
           
-          Serial.println("do something else");
-          delay(3000);
+          readAndSendInput(client);
+         //Serial.println("do something else");
+          //delay(3000);
 
 
 

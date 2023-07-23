@@ -1,6 +1,7 @@
 import sys
 import time
 import socket
+import traceback
 
 sys.path.append('./protopy')    
 
@@ -52,8 +53,8 @@ while True:
         epicIn.ParseFromString(data)
         print (epicIn.DeviceName)
         print (epicIn.MacAddress)
-    except Exception e:
-        print (e)
+    except :
+        print (traceback.print_exc())
 
             
 

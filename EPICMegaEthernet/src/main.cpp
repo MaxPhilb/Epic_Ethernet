@@ -60,6 +60,99 @@ bool reading=false;
 EthernetServer serveur(4200);
 
 
+
+/**
+ *
+ *          resetchipselect
+ *
+ *
+ **/
+
+void resetchipselect()
+{
+  for (int i = 0; i < NB_CHIP; i++)
+  {
+    digitalWrite(chipsSelect[i], HIGH);
+    //Serial.println(chipsSelect[i]);
+  }
+}
+
+/*
+*
+*
+*   Lecture du port L en entier pour lire 8 bit de données en un seul coup
+*
+*/
+byte readPort()
+{
+  return PINL;
+}
+
+
+
+
+/**
+ *
+ *          initchipselect
+ *
+ *
+ **/
+void initchipselect()
+{
+  for (int i = 0; i < NB_CHIP; i++)
+  {
+    pinMode(chipsSelect[i], OUTPUT);
+  }
+  resetchipselect();
+}
+
+
+
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+*/
+
+
+bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+{
+    DigitalInput digIn=DigitalInput_init_zero;
+     resetchipselect();
+    //delayMicroseconds(2);
+    for (int i = 0; i < NB_CHIP; i++)
+    {
+      if (i > 0)
+      {
+        digitalWrite(chipsSelect[i - 1], HIGH);
+      }
+      digitalWrite(chipsSelect[i], LOW);
+      
+      delayMicroseconds(5);
+      
+      uint8_t val=45;
+      val=readPort(); //pour inverser ajouter ~ devant
+      table[i]=val;
+      for(int i=0;i<nbAnaInput;i++){
+            anaIn=AnalogInput_init_zero;
+            int val=analogRead(anaPin[i]);
+            anaIn.id=i;
+            anaIn.value=val;
+
+            if( pb_encode(stream,AnalogInput_fields,&anaIn) == false)
+            {
+              Serial.println("encode failed");
+              return false;
+            }    
+      }
+
+      return true;
+    }
+}
+
+
 /**
  * 
  * 
@@ -134,6 +227,8 @@ void readAndSendInput(EthernetClient client){
 
         //epicIn.anainputs.arg=&message.anaInput;
         epicIn.anainputs.funcs.encode= &encode_anaInput;
+
+         epicIn.anainputs.funcs.encode= &encode_digInput;
         
         /* Now we are ready to encode the message! */
         status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
@@ -324,50 +419,6 @@ int index=0;
 }
 
 
-/**
- *
- *          resetchipselect
- *
- *
- **/
-
-void resetchipselect()
-{
-  for (int i = 0; i < NB_CHIP; i++)
-  {
-    digitalWrite(chipsSelect[i], HIGH);
-    //Serial.println(chipsSelect[i]);
-  }
-}
-
-/*
-*
-*
-*   Lecture du port L en entier pour lire 8 bit de données en un seul coup
-*
-*/
-byte readPort()
-{
-  return PINL;
-}
-
-
-
-
-/**
- *
- *          initchipselect
- *
- *
- **/
-void initchipselect()
-{
-  for (int i = 0; i < NB_CHIP; i++)
-  {
-    pinMode(chipsSelect[i], OUTPUT);
-  }
-  resetchipselect();
-}
 
 /**
  *

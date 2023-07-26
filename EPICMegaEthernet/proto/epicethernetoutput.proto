@@ -9,5 +9,7 @@ message EpicEthernetOutput {
 
     repeated DigitalOutput digoutputs=1 ; //32 sorties [(nanopb).max_size = 32 , (nanopb).fixed_length = true]
     int32 nbChannel=2;
+    string DeviceName=5; //
+    string MacAddress=6; // 
 }
 

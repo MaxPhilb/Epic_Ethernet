@@ -18,6 +18,8 @@ typedef struct _DigitalOutput {
 typedef struct _EpicEthernetOutput {
     pb_callback_t digoutputs; /* 32 sorties [(nanopb).max_size = 32 , (nanopb).fixed_length = true] */
     int32_t nbChannel;
+    pb_callback_t DeviceName; /*  */
+    pb_callback_t MacAddress; /*  */
 } EpicEthernetOutput;
 
 
@@ -27,15 +29,17 @@ extern "C" {
 
 /* Initializer values for message structs */
 #define DigitalOutput_init_default               {0, 0}
-#define EpicEthernetOutput_init_default          {{{NULL}, NULL}, 0}
+#define EpicEthernetOutput_init_default          {{{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}}
 #define DigitalOutput_init_zero                  {0, 0}
-#define EpicEthernetOutput_init_zero             {{{NULL}, NULL}, 0}
+#define EpicEthernetOutput_init_zero             {{{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define DigitalOutput_numChannel_tag             1
 #define DigitalOutput_value_tag                  2
 #define EpicEthernetOutput_digoutputs_tag        1
 #define EpicEthernetOutput_nbChannel_tag         2
+#define EpicEthernetOutput_DeviceName_tag        5
+#define EpicEthernetOutput_MacAddress_tag        6
 
 /* Struct field encoding specification for nanopb */
 #define DigitalOutput_FIELDLIST(X, a) \
@@ -46,7 +50,9 @@ X(a, STATIC,   SINGULAR, BOOL,     value,             2)
 
 #define EpicEthernetOutput_FIELDLIST(X, a) \
 X(a, CALLBACK, REPEATED, MESSAGE,  digoutputs,        1) \
-X(a, STATIC,   SINGULAR, INT32,    nbChannel,         2)
+X(a, STATIC,   SINGULAR, INT32,    nbChannel,         2) \
+X(a, CALLBACK, SINGULAR, STRING,   DeviceName,        5) \
+X(a, CALLBACK, SINGULAR, STRING,   MacAddress,        6)
 #define EpicEthernetOutput_CALLBACK pb_default_field_callback
 #define EpicEthernetOutput_DEFAULT NULL
 #define EpicEthernetOutput_digoutputs_MSGTYPE DigitalOutput

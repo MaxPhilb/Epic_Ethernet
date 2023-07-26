@@ -33,7 +33,9 @@ sock.connect((ip,4200))
 
 message=listout.SerializeToString()
 #+"\n".encode('ascii')
+
 sock.send(message)
+'''
 time.sleep(10)
 for i in range(5):
     output=listout.digoutputs.add()
@@ -44,11 +46,12 @@ for i in range(5):
 message=listout.SerializeToString()
 #+"\n".encode('ascii')
 sock.send(message)
+'''
 while True:
-    data = sock.recv(1024)
+    data = sock.recv(4096)
     if not data:
         break
-    #print (data)
+    print (data)
     try:
         epicIn.ParseFromString(data)
         print (epicIn.DeviceName)

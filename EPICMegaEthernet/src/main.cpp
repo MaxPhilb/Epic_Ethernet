@@ -134,14 +134,13 @@ bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
       
       uint8_t val=45;
       val=readPort(); //pour inverser ajouter ~ devant
-      table[i]=val;
-      for(int i=0;i<nbAnaInput;i++){
-            anaIn=AnalogInput_init_zero;
-            int val=analogRead(anaPin[i]);
-            anaIn.id=i;
-            anaIn.value=val;
+      for(int j=0;j<8;j++){
+            digIn=AnalogInput_init_zero;
+            int val=bitRead(val,j);
+            digIn.id=j+8*i;
+            digIn.value=val;
 
-            if( pb_encode(stream,AnalogInput_fields,&anaIn) == false)
+            if( pb_encode(stream,AnalogInput_fields,&digIn) == false)
             {
               Serial.println("encode failed");
               return false;
@@ -219,16 +218,16 @@ void readAndSendInput(EthernetClient client){
         epicIn.numberAnalogInput=16;
         epicIn.numberDigitalInput=192;
         epicIn.DeviceName.arg = "EPIC";
-        epicIn.DeviceName.funcs.encode = &encode_string;
+        //epicIn.DeviceName.funcs.encode = &encode_string;
 
-        epicIn.MacAddress.arg = mac[MAC_INDEX];
-        epicIn.MacAddress.funcs.encode = &encode_string;
+        //epicIn.MacAddress.arg = mac[MAC_INDEX];
+        //epicIn.MacAddress.funcs.encode = &encode_string;
        
 
-        //epicIn.anainputs.arg=&message.anaInput;
-        epicIn.anainputs.funcs.encode= &encode_anaInput;
+       
+        //epicIn.anainputs.funcs.encode= &encode_anaInput;
 
-         epicIn.anainputs.funcs.encode= &encode_digInput;
+        //epicIn.diginputs.funcs.encode= &encode_digInput;
         
         /* Now we are ready to encode the message! */
         status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
@@ -245,8 +244,22 @@ void readAndSendInput(EthernetClient client){
           client.write(buffer,message_length);
         }
 
-
-
+        Serial.println("call decode epicinput");
+        EpicEthernetInput epicIntmp = EpicEthernetInput_init_zero;
+        pb_istream_t istreamtmp = pb_istream_from_buffer(buffer, message_length);
+        if (!pb_decode(istreamtmp,EpicEthernetInput,&epicIntmp)){
+            Serial.print("error decoding: ");
+            Serial.println(stream->errmsg);
+        }
+        else{
+            Serial.println("decodelist ok");
+        }
+        Serial.print("numChannel ");
+        Serial.print(digout.numChannel);
+        Serial.print(" value ");
+        Serial.println(digout.value);
+        
+        setOutput(digout.numChannel,digout.value);
   
 
 
@@ -756,7 +769,7 @@ void loop()
           
           readAndSendInput(client);
          //Serial.println("do something else");
-          //delay(3000);
+          delay(3000);
 
 
 

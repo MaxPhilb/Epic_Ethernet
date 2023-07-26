@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18\x65picethernetoutput.proto\"2\n\rDigitalOutput\x12\x12\n\nnumChannel\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x08\"K\n\x12\x45picEthernetOutput\x12\"\n\ndigoutputs\x18\x01 \x03(\x0b\x32\x0e.DigitalOutput\x12\x11\n\tnbChannel\x18\x02 \x01(\x05\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18\x65picethernetoutput.proto\"2\n\rDigitalOutput\x12\x12\n\nnumChannel\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x08\"s\n\x12\x45picEthernetOutput\x12\"\n\ndigoutputs\x18\x01 \x03(\x0b\x32\x0e.DigitalOutput\x12\x11\n\tnbChannel\x18\x02 \x01(\x05\x12\x12\n\nDeviceName\x18\x05 \x01(\t\x12\x12\n\nMacAddress\x18\x06 \x01(\tb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -24,5 +24,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_DIGITALOUTPUT']._serialized_start=28
   _globals['_DIGITALOUTPUT']._serialized_end=78
   _globals['_EPICETHERNETOUTPUT']._serialized_start=80
-  _globals['_EPICETHERNETOUTPUT']._serialized_end=155
+  _globals['_EPICETHERNETOUTPUT']._serialized_end=195
 # @@protoc_insertion_point(module_scope)

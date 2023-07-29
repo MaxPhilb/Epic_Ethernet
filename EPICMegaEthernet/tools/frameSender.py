@@ -16,6 +16,7 @@ boolstate=True
 epicIn=epicethernetinput_pb2.EpicEthernetInput()
 
 
+
 for i in range(5):
     output=listout.digoutputs.add()
     output.numChannel=i
@@ -51,14 +52,19 @@ while True:
     data = sock.recv(4096)
     if not data:
         break
-    print (data)
+    #print (data)
+    print ("size message ")
+    #print (data)
+    print (len(data))
+    print (''.join('{:02x}'.format(x) for x in data))
+    print (epicIn.IsInitialized())
     try:
         epicIn.ParseFromString(data)
-        print (epicIn.DeviceName)
-        print (epicIn.MacAddress)
     except :
         print (traceback.print_exc())
+    
 
-            
+    print (epicIn.DeviceName)
+    print (epicIn.MacAddress)
 
 sock.close()

@@ -191,6 +191,36 @@ bool encode_string(pb_ostream_t* stream, const pb_field_t* field, void* const* a
     return pb_encode_string(stream, (uint8_t*)str, strlen(str));
 }
 
+
+
+bool decode_string(pb_istream_t *stream, const pb_field_t *field,  void **arg)
+{
+    byte buffer[1024] = {0};
+    
+    /* We could read block-by-block to avoid the large buffer... */
+    if (stream->bytes_left > sizeof(buffer) - 1)
+        return false;
+    
+    if (!pb_read(stream, buffer, stream->bytes_left))
+        return false;
+    
+    /* Print the string, in format comparable with protoc --decode.
+     * Format comes from the arg defined in main().
+     */
+    String ch=String((char*)buffer);
+    Serial.println( ch);
+    return true;
+  
+}
+
+void p(byte X) {
+
+   if (X < 10) {Serial.print("0");}
+
+   Serial.println(X, HEX);
+
+}
+
 /**
  * 
  * 
@@ -218,17 +248,30 @@ void readAndSendInput(EthernetClient client){
         epicIn.numberAnalogInput=16;
         epicIn.numberDigitalInput=192;
         epicIn.DeviceName.arg = "EPIC";
-        //epicIn.DeviceName.funcs.encode = &encode_string;
+        epicIn.DeviceName.funcs.encode = &encode_string;
+         String macStr="";
+         String hexstring="";
+        for(int i=0;i<6;i++){
+            hexstring="";
+            if(mac[MAC_INDEX][i] < 0x10) {
+              hexstring += '0';
+            }
 
-        //epicIn.MacAddress.arg = mac[MAC_INDEX];
-        //epicIn.MacAddress.funcs.encode = &encode_string;
+            hexstring +=String(mac[MAC_INDEX][i], HEX);
+            
+          macStr+= hexstring +":";
+        }
+        macStr=macStr.substring(0,macStr.length()-1);
+        Serial.println(macStr);
+        epicIn.MacAddress.arg = macStr.c_str();
+        epicIn.MacAddress.funcs.encode = &encode_string;
        
 
        
         //epicIn.anainputs.funcs.encode= &encode_anaInput;
 
         //epicIn.diginputs.funcs.encode= &encode_digInput;
-        
+
         /* Now we are ready to encode the message! */
         status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
         message_length = stream.bytes_written;
@@ -240,28 +283,42 @@ void readAndSendInput(EthernetClient client){
             Serial.println(PB_GET_ERROR(&stream));
             
         }
-        if(client){
-          client.write(buffer,message_length);
+
+        for(int k=0;k<message_length;k++){
+
+          p(buffer[k]);
+
         }
+
+        if(client){
+          client.write((char *)buffer,message_length);
+        }
+        
 
         Serial.println("call decode epicinput");
+        Serial.print("message length ");
+        Serial.println(message_length);
         EpicEthernetInput epicIntmp = EpicEthernetInput_init_zero;
         pb_istream_t istreamtmp = pb_istream_from_buffer(buffer, message_length);
-        if (!pb_decode(istreamtmp,EpicEthernetInput,&epicIntmp)){
+
+        epicIntmp.DeviceName.funcs.decode=decode_string;
+        epicIntmp.MacAddress.funcs.decode=decode_string;
+
+        if (!pb_decode(&istreamtmp,EpicEthernetInput_fields,&epicIntmp)){
             Serial.print("error decoding: ");
-            Serial.println(stream->errmsg);
+            Serial.println(istreamtmp.errmsg);
         }
         else{
-            Serial.println("decodelist ok");
+            Serial.println("decode epic ok");
+            
         }
-        Serial.print("numChannel ");
-        Serial.print(digout.numChannel);
-        Serial.print(" value ");
-        Serial.println(digout.value);
-        
-        setOutput(digout.numChannel,digout.value);
-  
+       
 
+       
+       
+       
+  
+      Serial.println();
 
 
 }

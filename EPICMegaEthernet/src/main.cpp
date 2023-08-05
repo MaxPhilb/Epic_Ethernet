@@ -828,7 +828,7 @@ void loop()
           
           readAndSendInput(client);
          //Serial.println("do something else");
-          delay(3000);
+          //delay(3000);
 
 
 

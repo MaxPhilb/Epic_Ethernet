@@ -18,5 +18,6 @@ message EpicEthernetInput {
      int32 numberAnalogInput=4; //16 entrees
      string DeviceName=5; //
      string MacAddress=6; // 
+     int32 timeStamp=7;
 }
 

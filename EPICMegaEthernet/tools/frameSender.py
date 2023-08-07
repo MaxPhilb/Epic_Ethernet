@@ -49,15 +49,15 @@ message=listout.SerializeToString()
 sock.send(message)
 '''
 while True:
-    data = sock.recv(4096)
+    data = sock.recv(2048)
     if not data:
         break
     #print (data)
     print ("size message ")
     #print (data)
     print (len(data))
-    print (''.join('{:02x}'.format(x) for x in data))
-    print (epicIn.IsInitialized())
+    #print (''.join('{:02x}'.format(x) for x in data))
+    #print (epicIn.IsInitialized())
     try:
         epicIn.ParseFromString(data)
     except :
@@ -66,5 +66,21 @@ while True:
 
     print (epicIn.DeviceName)
     print (epicIn.MacAddress)
+    print (epicIn.timeStamp)
+
+    
+    print()
+    print (" ANA INPUT: ")
+    for listAna in epicIn.anainputs:
+        print ("id "+ str(listAna.id) +" " + str(listAna.value))
+
+    print()
+    print (" DIG INPUT:")
+    
+    for listDig in epicIn.diginputs:
+        print ("id "+ str(listDig.id)+" "+ str(listDig.value))
+
+    print()
+    print()
 
 sock.close()

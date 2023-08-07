@@ -21,8 +21,8 @@
 #define nbDigInput NB_CHIP *NB_INPUT
 #define nbAnaInput 16
 
-
 #define MAC_INDEX 0
+#define  vitesseTrame 16 //envoie la trame toutes les x millisecondes
 
 //#define DEBUG   //permet d'afficher les traces
 //#define DEBUG_EXECUTION_TIME //permet d'afficher les temps d'execution
@@ -50,13 +50,11 @@ struct STRUCT
 } message;
 
 const int NB_LEC_DEBOUNCE=3;
-
 byte tempLec[NB_LEC_DEBOUNCE][NB_CHIP];
-
-
 unsigned long startTime;
-
 bool reading=false;
+unsigned long lastTime=0;
+
 
 
 EthernetServer serveur(4200);
@@ -141,16 +139,28 @@ bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
             int val=bitRead(val,j);
             digIn.id=j+8*i;
             digIn.value=val;
+            #ifdef DEBUG
+              Serial.print( " ");
+              Serial.print(digIn.id);
+              Serial.print (" ");
+              Serial.println(val);
+            #endif
+            if (!pb_encode_tag_for_field(stream, field))
+           {
+            Serial.println("encode tag  failed dig in");
+              return false;
+           }
 
-            if( pb_encode(stream,AnalogInput_fields,&digIn) == false)
+            if( pb_encode_submessage(stream,AnalogInput_fields,&digIn) == false)
             {
-              Serial.println("encode failed");
+              Serial.println("encode failed dig in");
               return false;
             }    
       }
 
-      return true;
-    }
+     
+    } 
+    return true;
 }
 
 
@@ -168,13 +178,26 @@ bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
     AnalogInput anaIn=AnalogInput_init_zero;
      for(int i=0;i<nbAnaInput;i++){
           anaIn=AnalogInput_init_zero;
+          
           int val=analogRead(anaPin[i]);
           anaIn.id=i;
-          anaIn.value=val;
+          anaIn.value=(float)val;
+          #ifdef DEBUG
+          Serial.print( " ");
+          Serial.print(i);
+          Serial.print (" ");
+          Serial.println(val);
+          #endif
+           if (!pb_encode_tag_for_field(stream, field))
+           {
+              return false;
+           }
 
-          if( pb_encode(stream,AnalogInput_fields,&anaIn) == false)
+           
+
+          if(pb_encode_submessage(stream,AnalogInput_fields,&anaIn) == false)
           {
-            Serial.println("encode failed");
+            Serial.println("encode sub anainput failed");
             return false;
           }    
     }
@@ -210,7 +233,7 @@ bool decode_string(pb_istream_t *stream, const pb_field_t *field,  void **arg)
      * Format comes from the arg defined in main().
      */
     String ch=String((char*)buffer);
-    Serial.println( ch);
+    //Serial.println( ch);
     return true;
   
 }
@@ -222,6 +245,27 @@ void p(byte X) {
    Serial.println(X, HEX);
 
 }
+
+bool decode_anainputs(pb_istream_t *stream, const pb_field_t *field,  void **arg)
+{
+    //Serial.println("call decodelist anainput");
+   AnalogInput anain = AnalogInput_init_zero;
+   if (!pb_decode(stream,AnalogInput_fields,&anain)){
+      Serial.print("error decoding anainput: ");
+      Serial.println(stream->errmsg);
+   }
+  
+  #ifdef DEBUG
+    Serial.print("id ");
+    Serial.print(anain.id);
+    Serial.print(" value ");
+    Serial.println(anain.value);
+   #endif
+   
+  
+  
+}
+
 
 /**
  * 
@@ -236,7 +280,7 @@ void readAndSendInput(EthernetClient client){
 
  
 
-  uint8_t buffer[1024];
+  uint8_t buffer[2048];
   size_t message_length;
  bool status;
   //send
@@ -264,15 +308,17 @@ void readAndSendInput(EthernetClient client){
           macStr+= hexstring +":";
         }
         macStr=macStr.substring(0,macStr.length()-1);
-        Serial.println(macStr);
+        //Serial.println(macStr);
         epicIn.MacAddress.arg = macStr.c_str();
         epicIn.MacAddress.funcs.encode = &encode_string;
        
 
        
-        //epicIn.anainputs.funcs.encode= &encode_anaInput;
+        epicIn.anainputs.funcs.encode= &encode_anaInput;
 
-        //epicIn.diginputs.funcs.encode= &encode_digInput;
+        epicIn.diginputs.funcs.encode= &encode_digInput;
+
+        epicIn.timeStamp=millis();
 
         /* Now we are ready to encode the message! */
         status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
@@ -286,41 +332,44 @@ void readAndSendInput(EthernetClient client){
             
         }
 
+        /*
         for(int k=0;k<message_length;k++){
 
           p(buffer[k]);
 
         }
+        */
 
         if(client){
           client.write((char *)buffer,message_length);
         }
-        
 
+         #ifdef DEBUG
+        Serial.print("message length ");
+        Serial.println(message_length);
+  
         Serial.println("call decode epicinput");
         Serial.print("message length ");
         Serial.println(message_length);
+      
         EpicEthernetInput epicIntmp = EpicEthernetInput_init_zero;
         pb_istream_t istreamtmp = pb_istream_from_buffer(buffer, message_length);
 
         epicIntmp.DeviceName.funcs.decode=decode_string;
         epicIntmp.MacAddress.funcs.decode=decode_string;
+        //epicIntmp.anainputs.funcs.decode=decode_anainputs;
 
         if (!pb_decode(&istreamtmp,EpicEthernetInput_fields,&epicIntmp)){
             Serial.print("error decoding: ");
             Serial.println(istreamtmp.errmsg);
         }
         else{
-            Serial.println("decode epic ok");
+            Serial.println("decode epic input ok");
             
         }
-       
-
-       
-       
-       
   
       Serial.println();
+      #endif
 
 
 }
@@ -378,20 +427,24 @@ void setOutput(int channel, bool state)
 */
 void decodeListOutput(pb_istream_t *stream, const pb_field_t *field, void **arg){
 
-  Serial.println("call decodelistoutput");
+  //Serial.println("call decodelistoutput");
    DigitalOutput digout = DigitalOutput_init_zero;
    if (!pb_decode(stream,DigitalOutput_fields,&digout)){
       Serial.print("error decoding: ");
       Serial.println(stream->errmsg);
    }
    else{
+       #ifdef DEBUG
       Serial.println("decodelist ok");
+      #endif
    }
+
+   #ifdef DEBUG
    Serial.print("numChannel ");
    Serial.print(digout.numChannel);
    Serial.print(" value ");
    Serial.println(digout.value);
-   
+   #endif
   setOutput(digout.numChannel,digout.value);
 
 }
@@ -774,6 +827,7 @@ void setup()
 
 
 
+
 /**
  *
  *          loop
@@ -787,6 +841,8 @@ void loop()
 {
   uint8_t buffer[256]; // Ajustez la taille du tampon en fonction de la taille maximale du message protobuf
   int bytesRead;
+  
+
   EthernetClient client = serveur.available();
   //client.setTimeout(10);
   if (client) {
@@ -800,6 +856,10 @@ void loop()
 
     */
     while(client.connected()){
+        #ifdef DEBUG_EXECUTION_TIME
+          startTime=millis();
+        #endif
+
         int sizeR=client.available();
         if(sizeR)
         { 
@@ -811,10 +871,10 @@ void loop()
               EpicEthernetOutput epicEthernetOutput = EpicEthernetOutput_init_default; // Structure du message EpicEthernetOutput
               epicEthernetOutput.digoutputs.funcs.decode=decodeListOutput;
               // Utilisez pb_decode pour désérialiser un message 
-              bool success = pb_decode(&istream, EpicEthernetOutput_fields, &epicEthernetOutput);
+              bool success = pb_decode(&istream, EpicEthernetOutput_fields, &epicEthernetOutput);  //on decode le message recu
 
               if (success) {
-                // Traitez le message protobuf reçu ici
+                
                 Serial.print("success ");
                 Serial.println(epicEthernetOutput.nbChannel);
 
@@ -826,42 +886,32 @@ void loop()
             
         }else{
           
-          readAndSendInput(client);
+          if( millis() > lastTime+16){
+            readAndSendInput(client);
+            lastTime=millis();
+            Serial.println(millis());
+
+          }
+          
+
          //Serial.println("do something else");
-          //delay(3000);
+          //delay(1000);
 
 
 
         }
+         #ifdef DEBUG_EXECUTION_TIME
+            unsigned long deltaTime=millis()-startTime;
+          Serial.print("execution total time : ");
+          Serial.println(deltaTime);
+            //delay(1000);
+          #endif
     }
-  //Serial.print("message recu ");
- // Serial.println(bytesRead);
-  //Serial.println(*readbuf);
-  //  decodeMessage2();
+
     
   
    
   }
 
-  //Serial.println("no more client");
-
-  #ifdef DEBUG_EXECUTION_TIME
-  startTime=millis();
-  #endif
-
-   //analogReadInput();
-  //digitalReadInput(message.digInput);
-  //readDebounceInput();
-
-
-   #ifdef DEBUG
-    //delay(1000);
-  #endif
-  #ifdef DEBUG_EXECUTION_TIME
-    unsigned long deltaTime=millis()-startTime;
-  Serial.print("execution total time : ");
-  Serial.println(deltaTime);
-    //delay(1000);
-  #endif
   
 }

@@ -435,9 +435,9 @@
 #endif
 
 // Enter a MAC address and IP address for your controller below.
-#define NUMBER_OF_MAC      20
+#define SIZE_MAC      6
 
-byte mac[][NUMBER_OF_MAC] =
+byte mac[][SIZE_MAC] =
 {
   { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0x01 },
   { 0xDE, 0xAD, 0xBE, 0xEF, 0xBE, 0x02 },

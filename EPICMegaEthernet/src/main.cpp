@@ -13,8 +13,13 @@
 #include "epicethernetinput.pb.h"
 #include "epicethernetoutput.pb.h"
 
+#include <ArduinoJson.h>
+
 
 //#include "pio_without_options.pb.h"
+
+#define DEVICENAME "EPIC"
+#define SIZEOFNAME 4
 
 #define NB_INPUT 8
 #define NB_CHIP 24
@@ -22,7 +27,7 @@
 #define nbAnaInput 16
 
 #define MAC_INDEX 0
-#define  vitesseTrame 16 //envoie la trame toutes les x millisecondes
+#define  vitesseTrame 14 //envoie la trame toutes les x millisecondes
 
 //#define DEBUG   //permet d'afficher les traces
 //#define DEBUG_EXECUTION_TIME //permet d'afficher les temps d'execution
@@ -287,7 +292,8 @@ void readAndSendInput(EthernetClient client){
   EpicEthernetInput epicIn = EpicEthernetInput_init_zero;
   DigitalInput digIn=DigitalInput_init_zero;
 
-
+  Serial.print("start millis");
+  Serial.println(millis());
   pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
         
         
@@ -295,6 +301,9 @@ void readAndSendInput(EthernetClient client){
         epicIn.numberDigitalInput=192;
         epicIn.DeviceName.arg = "EPIC";
         epicIn.DeviceName.funcs.encode = &encode_string;
+
+  Serial.print("devicename millis");
+  Serial.println(millis());
          String macStr="";
          String hexstring="";
         for(int i=0;i<6;i++){
@@ -311,12 +320,14 @@ void readAndSendInput(EthernetClient client){
         //Serial.println(macStr);
         epicIn.MacAddress.arg = macStr.c_str();
         epicIn.MacAddress.funcs.encode = &encode_string;
+
        
 
        
         epicIn.anainputs.funcs.encode= &encode_anaInput;
 
         epicIn.diginputs.funcs.encode= &encode_digInput;
+
 
         epicIn.timeStamp=millis();
 
@@ -331,7 +342,9 @@ void readAndSendInput(EthernetClient client){
             Serial.println(PB_GET_ERROR(&stream));
             
         }
-
+      Serial.print("encoding millis");
+  Serial.println(millis());
+  Serial.println();
         /*
         for(int k=0;k<message_length;k++){
 
@@ -374,6 +387,181 @@ void readAndSendInput(EthernetClient client){
 
 }
 
+
+void readAndSendInputJson(EthernetClient client)
+{
+   Serial.print("start millis");
+  Serial.println(millis());
+  DynamicJsonDocument doc(2048);
+  doc["platine"]="EPIC";
+  String macStr="";
+         String hexstring="";
+        for(int i=0;i<6;i++){
+            hexstring="";
+            if(mac[MAC_INDEX][i] < 0x10) {
+              hexstring += '0';
+            }
+
+            hexstring +=String(mac[MAC_INDEX][i], HEX);
+            
+          macStr+= hexstring +":";
+        }
+        macStr=macStr.substring(0,macStr.length()-1);
+  doc["Mac"]=macStr;
+
+  for (int i = 0; i < NB_CHIP; i++)
+    {
+      if (i > 0)
+      {
+        digitalWrite(chipsSelect[i - 1], HIGH);
+      }
+      digitalWrite(chipsSelect[i], LOW);
+      
+      delayMicroseconds(5);
+      
+      uint8_t val=45;
+      val=readPort(); //pour inverser ajouter ~ devant
+      doc["DI"][i]=val;
+      Serial.print(val,BIN);
+     
+    } 
+  for(int i=0;i<nbAnaInput;i++)
+  {
+    int val=analogRead(anaPin[i]);
+     doc["AI"][i]=val;
+    Serial.println(val);
+        
+  }
+  
+  
+  doc["timestamp"]=millis();
+  byte dataToWrite[2048];
+  size_t realSize=serializeJson(doc, dataToWrite);
+  client.write(dataToWrite,realSize);
+   Serial.print("end millis");
+  Serial.println(millis());
+
+}
+/**
+ * 
+ * 
+ *    lecture des entrees et envoie du message optimizé
+ * 
+ * 
+ * 
+*/
+
+void printHex(uint8_t num) {
+  char hexCar[2];
+
+  sprintf(hexCar, "%02X", num);
+  Serial.print(hexCar);
+}
+
+void readAndSendInputOptimize(EthernetClient client){
+
+    String DeviceName = DEVICENAME;
+    Serial.print("start millis ");
+  Serial.println(millis());
+    byte byteName[SIZEOFNAME+1];
+    DeviceName.getBytes(byteName, SIZEOFNAME+1);
+
+    for(int i=0; i<sizeof(byteName); i++){
+      
+        Serial.print("0x");
+        Serial.print(byteName[i] < 16 ? "0" : "");
+        Serial.print(byteName[i], HEX);
+        Serial.print(" ");
+    }
+
+
+    byte bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC +SIZEOFNAME]; //80= 24 digital + 32 ana + 6 mac + 4
+     resetchipselect();
+    //delayMicroseconds(2);
+    for (int i = 0; i < NB_CHIP; i++)
+    {
+      if (i > 0)
+      {
+        digitalWrite(chipsSelect[i - 1], HIGH);
+      }
+      digitalWrite(chipsSelect[i], LOW);
+      
+      delayMicroseconds(5);
+      
+      uint8_t val=45;
+      val=readPort(); //pour inverser ajouter ~ devant
+      bufferData[i]=val;
+      Serial.print(val,BIN);
+     
+    } 
+    Serial.println();
+   
+   int indexByte=NB_CHIP;
+    for(int i=0;i<nbAnaInput;i++){
+          int val=analogRead(anaPin[i]);
+          #ifdef DEBUG
+          Serial.print( " ");
+          Serial.print(i);
+          Serial.print (" ");
+          Serial.println(val);
+          /*
+          Serial.print("val first byte 0x");
+          Serial.print ((val & 0xFF00) ,HEX);
+          Serial.print(" val second byte 0x");
+          Serial.println ((val & 0x00FF) ,HEX);
+       
+       
+        Serial.print(" high ");
+        Serial.print("0x");
+        Serial.print(highByte(val) < 16 ? "0" : "");
+        Serial.print(highByte(val), HEX);
+        
+        Serial.print(" low ");
+        Serial.print("0x");
+        Serial.print(lowByte(val) < 16 ? "0" : "");
+        Serial.print(lowByte(val), HEX);
+        Serial.print(" ");
+
+        Serial.println(val);
+        */
+       Serial.print(i);
+        Serial.print(" ");
+        Serial.println(val);
+          #endif
+          
+        
+        
+        bufferData[indexByte]=highByte(val);
+        indexByte++;
+        bufferData[indexByte]=lowByte(val);
+        indexByte++;
+    }
+
+    
+    for(int i=0;i<SIZE_MAC;i++){
+      bufferData[NB_CHIP+nbAnaInput*2+i]=mac[MAC_INDEX][i];
+    }
+    
+    
+    for(int i=0;i<SIZEOFNAME;i++){
+      bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC+ i]=byteName[i];
+    }
+  
+ 
+    for(int i=0; i<sizeof(bufferData); i++){
+      
+        Serial.print("0x");
+        Serial.print(bufferData[i] < 16 ? "0" : "");
+        Serial.print(bufferData[i], HEX);
+        Serial.print(" ");
+    }
+
+    client.write(bufferData,sizeof(bufferData));
+    Serial.print("end millis ");
+  Serial.println(millis());
+  delay(5000);
+
+}
 
 
 
@@ -860,12 +1048,15 @@ void loop()
           startTime=millis();
         #endif
 
+        /*
         int sizeR=client.available();
         if(sizeR)
         { 
+  
             bytesRead = client.read(buffer, sizeof(buffer));
             if(bytesRead>0)
             {
+              
               // Désérialiser le message protobuf à partir du tampon
               pb_istream_t istream = pb_istream_from_buffer(buffer, bytesRead);
               EpicEthernetOutput epicEthernetOutput = EpicEthernetOutput_init_default; // Structure du message EpicEthernetOutput
@@ -882,6 +1073,7 @@ void loop()
                 Serial.print("error ");
                 Serial.println(istream.errmsg);
               }
+              
             }
             
         }else{
@@ -889,7 +1081,7 @@ void loop()
           if( millis() > lastTime+16){
             readAndSendInput(client);
             lastTime=millis();
-            Serial.println(millis());
+            //Serial.println(millis());
 
           }
           
@@ -900,6 +1092,18 @@ void loop()
 
 
         }
+        */
+
+       if( millis() > lastTime+vitesseTrame){
+            //readAndSendInput(client);
+            readAndSendInputOptimize(client);
+            //readAndSendInputJson(client);
+            lastTime=millis();
+            //Serial.println(millis());
+
+          }
+
+
          #ifdef DEBUG_EXECUTION_TIME
             unsigned long deltaTime=millis()-startTime;
           Serial.print("execution total time : ");

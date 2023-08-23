@@ -68,7 +68,7 @@ while True:
     print (epicIn.MacAddress)
     print (epicIn.timeStamp)
 
-    
+    '''
     print()
     print (" ANA INPUT: ")
     for listAna in epicIn.anainputs:
@@ -80,6 +80,7 @@ while True:
     for listDig in epicIn.diginputs:
         print ("id "+ str(listDig.id)+" "+ str(listDig.value))
 
+    '''
     print()
     print()
 

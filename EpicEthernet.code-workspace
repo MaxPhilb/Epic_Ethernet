@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../Dassault/archiDuino/pourarchiduinoougestes/GestES_APPLI_v1/GestES_APPLI_v1"
+		},
+		{
+			"path": "EPICMegaEthernet"
+		}
+	],
+	"settings": {}
+}

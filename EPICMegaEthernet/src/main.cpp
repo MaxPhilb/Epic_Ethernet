@@ -21,13 +21,15 @@
 #define DEVICENAME "EPIC"
 #define SIZEOFNAME 4
 
+#define SIZE_TIMESTAMP sizeof(unsigned long)
+
 #define NB_INPUT 8
 #define NB_CHIP 24
 #define nbDigInput NB_CHIP *NB_INPUT
 #define nbAnaInput 16
 
 #define MAC_INDEX 0
-#define  vitesseTrame 14 //envoie la trame toutes les x millisecondes
+#define  vitesseTrame 15 //envoie la trame toutes les x millisecondes
 
 //#define DEBUG   //permet d'afficher les traces
 //#define DEBUG_EXECUTION_TIME //permet d'afficher les temps d'execution
@@ -451,31 +453,19 @@ void readAndSendInputJson(EthernetClient client)
  * 
 */
 
-void printHex(uint8_t num) {
-  char hexCar[2];
 
-  sprintf(hexCar, "%02X", num);
-  Serial.print(hexCar);
-}
 
 void readAndSendInputOptimize(EthernetClient client){
 
     String DeviceName = DEVICENAME;
     Serial.print("start millis ");
-  Serial.println(millis());
+    Serial.println(millis());
     byte byteName[SIZEOFNAME+1];
     DeviceName.getBytes(byteName, SIZEOFNAME+1);
 
-    for(int i=0; i<sizeof(byteName); i++){
-      
-        Serial.print("0x");
-        Serial.print(byteName[i] < 16 ? "0" : "");
-        Serial.print(byteName[i], HEX);
-        Serial.print(" ");
-    }
 
 
-    byte bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC +SIZEOFNAME]; //80= 24 digital + 32 ana + 6 mac + 4
+    byte bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC + SIZE_TIMESTAMP + SIZEOFNAME]; //80= 24 digital + 32 ana + 6 mac + 4 timestamp + 4 nom
      resetchipselect();
     //delayMicroseconds(2);
     for (int i = 0; i < NB_CHIP; i++)
@@ -491,10 +481,10 @@ void readAndSendInputOptimize(EthernetClient client){
       uint8_t val=45;
       val=readPort(); //pour inverser ajouter ~ devant
       bufferData[i]=val;
-      Serial.print(val,BIN);
+     // Serial.print(val,BIN);
      
     } 
-    Serial.println();
+    //Serial.println();
    
    int indexByte=NB_CHIP;
     for(int i=0;i<nbAnaInput;i++){
@@ -541,13 +531,26 @@ void readAndSendInputOptimize(EthernetClient client){
     for(int i=0;i<SIZE_MAC;i++){
       bufferData[NB_CHIP+nbAnaInput*2+i]=mac[MAC_INDEX][i];
     }
+
+    unsigned long timestamp=millis();
+    for(int i=0;i<SIZE_TIMESTAMP;i++){
+        #ifdef DEBUG
+        Serial.print("time stamp ");
+        Serial.print(timestamp);
+        Serial.print("  ");
+        Serial.print((8*(3-i)));
+        Serial.print("  ");
+        Serial.println ((timestamp >> (8*(3-i))) & 0x00FF,HEX);
+        #endif
+        bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC+ i]=(timestamp >> (8*(3-i)) & 0x00FF  );
+    }
     
     
     for(int i=0;i<SIZEOFNAME;i++){
-      bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC+ i]=byteName[i];
+      bufferData[NB_CHIP+nbAnaInput*2+ SIZE_MAC + SIZE_TIMESTAMP + i]=byteName[i];
     }
   
- 
+     #ifdef DEBUG
     for(int i=0; i<sizeof(bufferData); i++){
       
         Serial.print("0x");
@@ -555,12 +558,12 @@ void readAndSendInputOptimize(EthernetClient client){
         Serial.print(bufferData[i], HEX);
         Serial.print(" ");
     }
+    #endif
 
     client.write(bufferData,sizeof(bufferData));
     Serial.print("end millis ");
-  Serial.println(millis());
-  delay(5000);
-
+    Serial.println(millis());
+ 
 }
 
 

@@ -27,7 +27,7 @@ message="t"
 
 sock.send(message.encode())
 
-SizeOfMessage=24+32+6+4
+SizeOfMessage=24+32+6+4+4
 
 while True:
     data = sock.recv(SizeOfMessage)
@@ -69,9 +69,20 @@ while True:
     
     print ("mac address " + str(macAddress))
 
+    """
+    print (''.join('{:02x}'.format(data[62]) ))
+    print (''.join('{:02x}'.format(data[63])))
+    print (''.join('{:02x}'.format(data[64])))
+    print (''.join('{:02x}'.format(data[65])))
+    """
+    
+    timestamp=(data[62]<<(8*3))+(data[63]<<(8*2))+(data[64]<<8)+data[65]
+    
+    print ("timestamp " + str(timestamp))
+
     name=""
     nameByte=[]
-    for i in range(62,66,1):
+    for i in range(66,70,1):
         
         nameByte.append(data[i])
     

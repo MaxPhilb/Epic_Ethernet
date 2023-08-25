@@ -11,24 +11,27 @@
 
 /* Struct definitions */
 typedef struct _DigitalInput {
-    int32_t id;
     bool value;
+    int32_t id;
 } DigitalInput;
 
 typedef struct _AnalogInput {
-    int32_t id;
     float value;
+    int32_t id;
 } AnalogInput;
 
-typedef struct _EpicEthernetInput {
-    pb_callback_t diginputs;
+typedef struct _simInput {
+    pb_size_t diginputs_count;
+    DigitalInput diginputs[192];
     int32_t numberDigitalInput; /* 192 entrees */
-    pb_callback_t anainputs;
+    pb_size_t anainputs_count;
+    AnalogInput anainputs[16];
     int32_t numberAnalogInput; /* 16 entrees */
-    pb_callback_t DeviceName; /*  */
-    pb_callback_t MacAddress; /*  */
+    char platineName[41];
+    char DeviceName[41]; /*  */
+    char MacAddress[41]; /*  */
     int32_t timeStamp;
-} EpicEthernetInput;
+} simInput;
 
 
 #ifdef __cplusplus
@@ -38,63 +41,65 @@ extern "C" {
 /* Initializer values for message structs */
 #define DigitalInput_init_default                {0, 0}
 #define AnalogInput_init_default                 {0, 0}
-#define EpicEthernetInput_init_default           {{{NULL}, NULL}, 0, {{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}, 0}
+#define simInput_init_default                    {0, {DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default, DigitalInput_init_default}, 0, 0, {AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default, AnalogInput_init_default}, 0, "", "", "", 0}
 #define DigitalInput_init_zero                   {0, 0}
 #define AnalogInput_init_zero                    {0, 0}
-#define EpicEthernetInput_init_zero              {{{NULL}, NULL}, 0, {{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}, 0}
+#define simInput_init_zero                       {0, {DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero, DigitalInput_init_zero}, 0, 0, {AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero, AnalogInput_init_zero}, 0, "", "", "", 0}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define DigitalInput_id_tag                      1
-#define DigitalInput_value_tag                   2
-#define AnalogInput_id_tag                       1
-#define AnalogInput_value_tag                    2
-#define EpicEthernetInput_diginputs_tag          1
-#define EpicEthernetInput_numberDigitalInput_tag 2
-#define EpicEthernetInput_anainputs_tag          3
-#define EpicEthernetInput_numberAnalogInput_tag  4
-#define EpicEthernetInput_DeviceName_tag         5
-#define EpicEthernetInput_MacAddress_tag         6
-#define EpicEthernetInput_timeStamp_tag          7
+#define DigitalInput_value_tag                   1
+#define DigitalInput_id_tag                      2
+#define AnalogInput_value_tag                    1
+#define AnalogInput_id_tag                       2
+#define simInput_diginputs_tag                   1
+#define simInput_numberDigitalInput_tag          2
+#define simInput_anainputs_tag                   3
+#define simInput_numberAnalogInput_tag           4
+#define simInput_platineName_tag                 7
+#define simInput_DeviceName_tag                  8
+#define simInput_MacAddress_tag                  9
+#define simInput_timeStamp_tag                   10
 
 /* Struct field encoding specification for nanopb */
 #define DigitalInput_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT32,    id,                1) \
-X(a, STATIC,   SINGULAR, BOOL,     value,             2)
+X(a, STATIC,   SINGULAR, BOOL,     value,             1) \
+X(a, STATIC,   SINGULAR, INT32,    id,                2)
 #define DigitalInput_CALLBACK NULL
 #define DigitalInput_DEFAULT NULL
 
 #define AnalogInput_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, INT32,    id,                1) \
-X(a, STATIC,   SINGULAR, FLOAT,    value,             2)
+X(a, STATIC,   SINGULAR, FLOAT,    value,             1) \
+X(a, STATIC,   SINGULAR, INT32,    id,                2)
 #define AnalogInput_CALLBACK NULL
 #define AnalogInput_DEFAULT NULL
 
-#define EpicEthernetInput_FIELDLIST(X, a) \
-X(a, CALLBACK, REPEATED, MESSAGE,  diginputs,         1) \
+#define simInput_FIELDLIST(X, a) \
+X(a, STATIC,   REPEATED, MESSAGE,  diginputs,         1) \
 X(a, STATIC,   SINGULAR, INT32,    numberDigitalInput,   2) \
-X(a, CALLBACK, REPEATED, MESSAGE,  anainputs,         3) \
+X(a, STATIC,   REPEATED, MESSAGE,  anainputs,         3) \
 X(a, STATIC,   SINGULAR, INT32,    numberAnalogInput,   4) \
-X(a, CALLBACK, SINGULAR, STRING,   DeviceName,        5) \
-X(a, CALLBACK, SINGULAR, STRING,   MacAddress,        6) \
-X(a, STATIC,   SINGULAR, INT32,    timeStamp,         7)
-#define EpicEthernetInput_CALLBACK pb_default_field_callback
-#define EpicEthernetInput_DEFAULT NULL
-#define EpicEthernetInput_diginputs_MSGTYPE DigitalInput
-#define EpicEthernetInput_anainputs_MSGTYPE AnalogInput
+X(a, STATIC,   SINGULAR, STRING,   platineName,       7) \
+X(a, STATIC,   SINGULAR, STRING,   DeviceName,        8) \
+X(a, STATIC,   SINGULAR, STRING,   MacAddress,        9) \
+X(a, STATIC,   SINGULAR, INT32,    timeStamp,        10)
+#define simInput_CALLBACK NULL
+#define simInput_DEFAULT NULL
+#define simInput_diginputs_MSGTYPE DigitalInput
+#define simInput_anainputs_MSGTYPE AnalogInput
 
 extern const pb_msgdesc_t DigitalInput_msg;
 extern const pb_msgdesc_t AnalogInput_msg;
-extern const pb_msgdesc_t EpicEthernetInput_msg;
+extern const pb_msgdesc_t simInput_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define DigitalInput_fields &DigitalInput_msg
 #define AnalogInput_fields &AnalogInput_msg
-#define EpicEthernetInput_fields &EpicEthernetInput_msg
+#define simInput_fields &simInput_msg
 
 /* Maximum encoded size of messages (where known) */
-/* EpicEthernetInput_size depends on runtime parameters */
 #define AnalogInput_size                         16
 #define DigitalInput_size                        13
+#define simInput_size                            3327
 
 #ifdef __cplusplus
 } /* extern "C" */

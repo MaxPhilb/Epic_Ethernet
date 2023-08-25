@@ -1,23 +1,83 @@
 syntax = "proto3";
 
+import "nanopb.proto";
+
+enum type {
+    unknown=1;
+    potentiometre=1;
+    //boutonAstable=2;
+    boutonStable=3;
+    boutonMultiPosition=4;
+    //boutonMultiPositionAstable=4;
+    tactileTouch=5;
+    tactilePosition=6;
+    rotacteurFou=9;
+    
+
+}
+
+enum position{
+    invalid=1;
+    neutre=2;
+    pushed=3;
+    up=4;
+    down=5;
+    left=6;
+    right=7;
+    plus=8;
+    minus=8;
+    valid=9;
+    break=10;
+    pos1=7;
+    pos2=7;
+    pos3=7;
+    pos4=7;
+    pos5=7;
+    pos6=7;
+    pos7=7;
+    pos8=7;
+    pos9=7;
+    pos10=7;
+    pos11=7;
+    pos12=7;
+    pos13=7;
+    pos14=7;
+    pos15=7;
+    pos16=7;
+}
+
 message DigitalInput{
-    int32 id =1;
-    bool value=2;
+    
+    bool value=1;
+    int32 id=2 ;  
+    int32 type=3;       // 1 
 }
 
 message AnalogInput{
-    int32 id =1;
-    float value=2;
+    
+    float value=1;
+    int32 id=2  ;  
+    int32 type=3;
 }
 
-message EpicEthernetInput {
+message EnumInput{
+    int32 value=1;
+    int32 id=2;
+    int32 type=3;
+    int32 min=4;
+    int32 max=5;
+}
 
-    repeated DigitalInput diginputs=1;
+message simInput {
+
+    repeated DigitalInput diginputs=1 [(nanopb).max_count = 192];
      int32 numberDigitalInput=2;  //192 entrees
-    repeated AnalogInput  anainputs=3; 
+    repeated AnalogInput  anainputs=3 [(nanopb).max_count = 16];
      int32 numberAnalogInput=4; //16 entrees
-     string DeviceName=5; //
-     string MacAddress=6; // 
-     int32 timeStamp=7;
+    string platineName=7 [(nanopb).max_length = 40];
+     string DeviceName=8 [(nanopb).max_length = 40]; //
+     string MacAddress=9 [(nanopb).max_length = 40]; // 
+     int32 timeStamp=10 [(nanopb).max_length = 40];
 }
+
 

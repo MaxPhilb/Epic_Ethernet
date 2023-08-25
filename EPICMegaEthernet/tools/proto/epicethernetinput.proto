@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+
+
+message DigitalInput{
+    
+    bool value=1;
+    int32 id=2 ;  
+}
+
+message AnalogInput{
+    
+    float value=1;
+    int32 id=2  ;  
+}
+
+
+
+message simInput {
+
+    repeated DigitalInput diginputs=1 ;
+     int32 numberDigitalInput=2;  //192 entrees
+    repeated AnalogInput  anainputs=3 ;
+     int32 numberAnalogInput=4; //16 entrees
+    string platineName=7 ;
+     string DeviceName=8; //
+     string MacAddress=9; // 
+     int32 timeStamp=10;
+}
+
+

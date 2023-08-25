@@ -12,7 +12,7 @@ PB_BIND(DigitalInput, DigitalInput, AUTO)
 PB_BIND(AnalogInput, AnalogInput, AUTO)
 
 
-PB_BIND(EpicEthernetInput, EpicEthernetInput, AUTO)
+PB_BIND(simInput, simInput, 2)
 
 
 

@@ -1,4 +1,4 @@
-protoc --python_out=./tools/protopy ./proto/epicethernetoutput.proto --proto_path=./proto/
+protoc --python_out=./protopy ./proto/epicethernetoutput.proto --proto_path=./proto/
 
 
-protoc --python_out=./tools/protopy ./proto/epicethernetinput.proto --proto_path=./proto/
+protoc --python_out=./protopy ./proto/epicethernetinput.proto --proto_path=./proto/

@@ -122,7 +122,7 @@ void initchipselect()
  * 
  * 
 */
-
+/*
 
 bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
 {
@@ -144,7 +144,7 @@ bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
       for(int j=0;j<8;j++){
             digIn=AnalogInput_init_zero;
             int val=bitRead(val,j);
-            digIn.id=j+8*i;
+            //digIn.id=i*8+j;
             digIn.value=val;
             #ifdef DEBUG
               Serial.print( " ");
@@ -169,7 +169,7 @@ bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
     } 
     return true;
 }
-
+*/
 
 /**
  * 
@@ -179,7 +179,7 @@ bool encode_digInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
  * 
 */
 
-
+/*
 bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
 {
     AnalogInput anaIn=AnalogInput_init_zero;
@@ -187,7 +187,7 @@ bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
           anaIn=AnalogInput_init_zero;
           
           int val=analogRead(anaPin[i]);
-          anaIn.id=i;
+          //anaIn.id=i;
           anaIn.value=(float)val;
           #ifdef DEBUG
           Serial.print( " ");
@@ -211,7 +211,7 @@ bool encode_anaInput(pb_ostream_t* stream, const pb_field_t* field, void* const*
 
     return true;
 }
-
+*/
 
 bool encode_string(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
 {
@@ -274,6 +274,7 @@ bool decode_anainputs(pb_istream_t *stream, const pb_field_t *field,  void **arg
 }
 
 
+
 /**
  * 
  * 
@@ -283,7 +284,7 @@ bool decode_anainputs(pb_istream_t *stream, const pb_field_t *field,  void **arg
  * 
 */
 
-void readAndSendInput(EthernetClient client){
+void readAndSendInputPB(EthernetClient client){
 
  
 
@@ -291,7 +292,7 @@ void readAndSendInput(EthernetClient client){
   size_t message_length;
  bool status;
   //send
-  EpicEthernetInput epicIn = EpicEthernetInput_init_zero;
+  simInput epicIn = simInput_init_zero;
   DigitalInput digIn=DigitalInput_init_zero;
 
   Serial.print("start millis");
@@ -301,8 +302,9 @@ void readAndSendInput(EthernetClient client){
         
         epicIn.numberAnalogInput=16;
         epicIn.numberDigitalInput=192;
-        epicIn.DeviceName.arg = "EPIC";
-        epicIn.DeviceName.funcs.encode = &encode_string;
+        strcpy(epicIn.DeviceName,"EPIC");
+        //epicIn.DeviceName.arg = "EPIC";
+        //epicIn.DeviceName.funcs.encode = &encode_string;
 
   Serial.print("devicename millis");
   Serial.println(millis());
@@ -320,21 +322,55 @@ void readAndSendInput(EthernetClient client){
         }
         macStr=macStr.substring(0,macStr.length()-1);
         //Serial.println(macStr);
-        epicIn.MacAddress.arg = macStr.c_str();
-        epicIn.MacAddress.funcs.encode = &encode_string;
+        //epicIn.MacAddress.arg = macStr.c_str();
+        //epicIn.MacAddress.funcs.encode = &encode_string;
+          strcpy(epicIn.MacAddress,macStr.c_str());
+     
+    
+     resetchipselect();
+    //delayMicroseconds(2);
+    for (int i = 0; i < NB_CHIP; i++)
+    {
+      if (i > 0)
+      {
+        digitalWrite(chipsSelect[i - 1], HIGH);
+      }
+      digitalWrite(chipsSelect[i], LOW);
+      
+      delayMicroseconds(5);
+      
+      digIn=DigitalInput_init_zero;
+      uint8_t val=45;
+      val=readPort(); //pour inverser ajouter ~ devant
+      for(int j=0;j<8;j++){
+            digIn=AnalogInput_init_zero;
+            int val=bitRead(val,j);
+            digIn.id=i*8+j;
+            digIn.value=val;
+            #ifdef DEBUG
+              Serial.print( " ");
+              Serial.print(digIn.id);
+              Serial.print (" ");
+              Serial.println(val);
+            #endif
+             epicIn.diginputs[i*8+j]=digIn;
+      }
+     
 
+     
+    } 
        
 
        
-        epicIn.anainputs.funcs.encode= &encode_anaInput;
+        //epicIn.anainputs.funcs.encode= &encode_anaInput;
 
-        epicIn.diginputs.funcs.encode= &encode_digInput;
+        //epicIn.diginputs.funcs.encode= &encode_digInput;
 
 
         epicIn.timeStamp=millis();
 
         /* Now we are ready to encode the message! */
-        status = pb_encode(&stream, EpicEthernetInput_fields, &epicIn);
+        status = pb_encode(&stream, simInput_fields, &epicIn);
         message_length = stream.bytes_written;
         
         /* Then just check for any errors.. */
@@ -431,7 +467,7 @@ void readAndSendInputJson(EthernetClient client)
   {
     int val=analogRead(anaPin[i]);
      doc["AI"][i]=val;
-    Serial.println(val);
+    //Serial.println(val);
         
   }
   
@@ -439,6 +475,10 @@ void readAndSendInputJson(EthernetClient client)
   doc["timestamp"]=millis();
   byte dataToWrite[2048];
   size_t realSize=serializeJson(doc, dataToWrite);
+
+  Serial.print("realsize ");
+  Serial.println(realSize);
+
   client.write(dataToWrite,realSize);
    Serial.print("end millis");
   Serial.println(millis());
@@ -981,7 +1021,20 @@ void setup()
   Ethernet.init (USE_THIS_SS_PIN);
 
   delay(1);
-  Ethernet.begin(mac[MAC_INDEX]);
+  
+
+  IPAddress dnServer(192, 168, 0, 1);
+// the router's gateway address:
+IPAddress gateway(192, 168, 0, 1);
+// the subnet:
+IPAddress subnet(255, 255, 255, 0);
+
+//the IP address is dependent on your network
+IPAddress ip(192, 168, 0, 2);
+
+
+  Ethernet.begin(mac[MAC_INDEX],ip,dns,gateway,subnet);
+  
   
   
   SerialDebug.print(F("Connected! IP address: "));
@@ -1098,9 +1151,9 @@ void loop()
         */
 
        if( millis() > lastTime+vitesseTrame){
-            //readAndSendInput(client);
-            readAndSendInputOptimize(client);
-            //readAndSendInputJson(client);
+            //readAndSendInputPB(client);
+            //readAndSendInputOptimize(client);
+            readAndSendInputJson(client);
             lastTime=millis();
             //Serial.println(millis());
 

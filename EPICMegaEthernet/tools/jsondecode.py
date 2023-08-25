@@ -17,7 +17,7 @@ for i in range(5):
     
 
 
-ip="192.168.2.160"
+ip="192.168.0.2"
 #ip="127.0.0.1"
 sock=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 sock.connect((ip,4200))
